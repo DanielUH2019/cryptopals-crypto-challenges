@@ -27,6 +27,25 @@ const HEX_MAP: Map<u8, [u8; 4]> = phf_map! {
 
 };
 
+const HEX_MAP_FROM_BINARY: Map<[u8; 4], u8> = phf_map! {
+    [0, 0, 0, 0] => b'0',
+    [0, 0, 0, 1] => b'1',
+    [0, 0, 1, 0] => b'2',
+    [0, 0, 1, 1] => b'3',
+    [0, 1, 0, 0] => b'4',
+    [0, 1, 0, 1] => b'5',
+    [0, 1, 1, 0] => b'6',
+    [0, 1, 1, 1] => b'7',
+    [1, 0, 0, 0] => b'8',
+    [1, 0, 0, 1] => b'9',
+    [1, 0, 1, 0] => b'A',
+    [1, 0, 1, 1] => b'B',
+    [1, 1, 0, 0] => b'C',
+    [1, 1, 0, 1] => b'D',
+    [1, 1, 1, 0] => b'E',
+    [1, 1, 1, 1] => b'F'
+};
+
 const OCTAL_MAP_FROM_BINARY: Map<[u8; 3], u8> = phf_map! {
     [0, 0, 0] => 0,
     [0, 0, 1] => 1,
@@ -56,12 +75,29 @@ const BASE64_ALPHABET: [u8; 64] = [
     b'w', b'x', b'y', b'z', b'0', b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9', b'+', b'/',
 ];
 
-struct Hex {
-    data: Vec<u8>,
+pub struct Hex {
+    pub data: Vec<u8>,
 }
 
 impl Hex {
-    fn to_binary(&self) -> Vec<u8> {
+    pub fn from_str(data: &str) -> Self {
+        Hex {
+            data: data.as_bytes().to_vec(),
+        }
+    }
+
+    pub fn from_binary(data: &[u8]) -> Self {
+        let data = data.chunks(4).map(|c| {
+            let v = HEX_MAP_FROM_BINARY.get(c);
+            match v {
+                Some(v) => *v,
+                None => panic!("Unexpected error converting binary to Hex with chunk: {:?}", c),
+            }
+        });
+        Hex { data: data.collect() }
+    }
+
+    pub fn to_binary(&self) -> Vec<u8> {
         let mut binary: Vec<u8> = Vec::with_capacity(self.data.len() * 4);
         for byte in &self.data {
             let hex = HEX_MAP.get(byte);
@@ -83,6 +119,10 @@ impl Hex {
             }
         }
         binary
+    }
+
+    pub fn to_str(&self) -> String {
+        String::from_utf8(self.data.clone()).unwrap().to_ascii_lowercase()
     }
 }
 
